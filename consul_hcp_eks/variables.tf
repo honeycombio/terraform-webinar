@@ -1,3 +1,7 @@
+variable "honeycomb_api_key" {
+  description = "Set this either as an environment variable TF_VAR_honeycomb_api_key or by passing as a flag with --var honeycomb_api_key=<value>"
+}
+
 variable "region" {
   default = "eu-west-1"
 }

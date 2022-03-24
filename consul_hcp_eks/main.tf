@@ -45,6 +45,11 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = ">= 1.11.3"
     }
+
+    consul = {
+      source  = "hashicorp/consul"
+      version = "2.15.0"
+    }
   }
 }
 
@@ -80,6 +85,15 @@ provider "kubectl" {
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   token                  = data.aws_eks_cluster_auth.cluster.token
   load_config_file       = false
+}
+
+provider "consul" {
+  address        = hcp_consul_cluster.main.consul_public_endpoint_url
+  datacenter     = hcp_consul_cluster.main.datacenter
+  ca_pem         = base64decode(hcp_consul_cluster.main.consul_ca_file)
+  token          = hcp_consul_cluster_root_token.token.secret_id
+  insecure_https = true
+  scheme         = "https"
 }
 
 data "aws_availability_zones" "available" {}
