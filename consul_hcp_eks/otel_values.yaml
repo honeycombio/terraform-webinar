@@ -16,19 +16,25 @@ config:
                 - source_labels: [__meta_kubernetes_pod_name]
                   action: replace
                   target_label: pod
-                - source_labels: [__meta_kubernetes_pod_annotation_honeycomb_io_metrics_path]
-                  action: replace
+                - action: replace
+                  source_labels: 
+                  - __meta_kubernetes_pod_annotation_honeycomb_io_metrics_path
                   target_label: __metrics_path__
-                  regex: (.+)
-                - source_labels: [__address__, __meta_kubernetes_pod_annotation_honeycomb_io_scrape_port]
-                  action: replace
+                - action: replace
+                  source_labels:
+                  - __address__
+                  - __meta_kubernetes_pod_annotation_honeycomb_io_scrape_port
                   regex: ([^:]+)(?::\d+)?;(\d+)
-                  replacement: $1:$2
+                  replacement: $$1:$$2
                   target_label: __address__
-                - source_labels: [__meta_kubernetes_pod_annotation_honeycomb_io_metrics]
-                  action: keep
+                - action: keep
+                  source_labels: 
+                  - __meta_kubernetes_pod_annotation_honeycomb_io_metrics
                   regex: true
   service:
+    telemetry:
+      logs:
+        level: "debug"
     pipelines:
       metrics:
         receivers:

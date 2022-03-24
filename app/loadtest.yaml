@@ -85,6 +85,7 @@ spec:
         app: load-generator
       annotations:
         honeycomb.io/metrics: 'true'
+        honeycomb.io/scrape_port: '9102'
         consul.hashicorp.com/connect-inject: 'false'
         consul.hashicorp.com/transparent-proxy: 'false'
     spec:

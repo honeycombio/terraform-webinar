@@ -44,8 +44,8 @@ spec:
       annotations:
         honeycomb.io/metrics: 'true'
         honeycomb.io/scrape_port: '9102'
-        honeycomb.io/metrics_path: '/stats'
-        consul.hashicorp.com/transparent-proxy-exclude-inbound-ports: '9102'
+        honeycomb.io/metrics_path: '/stats/prometheus'
+        consul.hashicorp.com/transparent-proxy-exclude-inbound-ports: '9101'
         consul.hashicorp.com/transparent-proxy-exclude-outbound-ports: '9411'
     spec:  
       serviceAccountName: web
