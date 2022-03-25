@@ -44,15 +44,4 @@ controller:
   enabled: true
 
 ingressGateways:
-  enabled: true
-  gateways:
-    - name: ingress-gateway
-      service:
-        type: LoadBalancer
-        ports:
-        - port: 80
-        annotations: |      
-          'service.beta.kubernetes.io/aws-load-balancer-nlb-target-type': ip
-          'service.beta.kubernetes.io/aws-load-balancer-type': external
-          'service.beta.kubernetes.io/aws-load-balancer-scheme': internet-facing
-
+  enabled: false

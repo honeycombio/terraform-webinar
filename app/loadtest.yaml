@@ -56,7 +56,8 @@ data:
         },
       }
       // our HTTP request, note that we are saving the response to res, which can be accessed later
-      const res = http.get('http://ingress-local.default.svc');
+      //const res = http.get('http://ingress-local.default.svc', params);
+      const res = http.get('http://k8s-default-web-f451100be6-170743721.eu-west-1.elb.amazonaws.com');
       const checkRes = check(res, {
         'status is 200': (r) => r.status === 200,
       });
