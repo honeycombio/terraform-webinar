@@ -6,8 +6,8 @@ resource "helm_release" "otel" {
 
   dynamic "set" {
     for_each = {
-      "honeycomb.apiKey" = var.honeycomb_api_key
-
+      "honeycomb.apiKey"  = var.honeycomb_api_key
+      "honeycomb.dataset" = "demo-traces"
     }
 
     content {

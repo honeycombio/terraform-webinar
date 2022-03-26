@@ -1,4 +1,10 @@
 config:
+  exporters:
+    otlp/metrics:
+      endpoint: api.honeycomb.io:443
+      headers:
+        "x-honeycomb-team": "${HONEYCOMB_API_KEY}"
+        "x-honeycomb-dataset": "demo-metrics"
   receivers:
       prometheus:
         config:
@@ -38,9 +44,12 @@ config:
     pipelines:
       metrics:
         receivers:
-          - prometheus
-        exporters:
           - otlp
+          - prometheus
+        processors:
+          - batch
+        exporters:
+          - otlp/metrics
 
 podAnnotations:
   consul.hashicorp.com/connect-inject: 'false'
