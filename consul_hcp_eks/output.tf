@@ -61,3 +61,15 @@ output "consul_root_token" {
 output "consul_url" {
   value = hcp_consul_cluster.main.consul_public_endpoint_url
 }
+
+output "consul_datacenter" {
+  value = hcp_consul_cluster.main.datacenter
+}
+
+output "consul_ca" {
+  value = base64decode(hcp_consul_cluster.main.consul_ca_file)
+}
+
+output "honeycomb_dataset_metrics" {
+  value = "demo-metrics"
+}

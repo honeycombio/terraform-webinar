@@ -1,0 +1,112 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cache
+  namespace: default
+  labels:
+    app: cache
+spec:
+  selector:
+    app: cache
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cache
+  namespace: default
+automountServiceAccountToken: false
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache-deployment
+  namespace: default
+  labels:
+    app: cache_v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cache
+  template:
+    metadata:
+      labels:
+        app: cache
+        metrics: enabled
+      annotations:
+        honeycomb.io/metrics: 'true'
+        honeycomb.io/scrape_port: '9102'
+        honeycomb.io/metrics_path: '/stats/prometheus'
+        consul.hashicorp.com/transparent-proxy-exclude-inbound-ports: '9102'
+        consul.hashicorp.com/transparent-proxy-exclude-outbound-ports: '9411'
+    spec:  
+      serviceAccountName: cache
+      automountServiceAccountToken: true
+      containers:
+        - name: cache
+          image: nicholasjackson/fake-service:v0.23.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9090
+          env:
+            - name: "NAME"
+              value: "cache"
+            - name: "LISTEN_ADDR"
+              value: "0.0.0.0:9090"
+            - name: "TIMING_50_PERCENTILE"
+              value: "1ms"
+            - name: "TIMING_90_PERCENTILE"
+              value: "2ms"
+            - name: "TIMING_99_PERCENTILE"
+              value: "3ms"
+            - name: "TIMING_VARIANCE"
+              value: "10"
+            - name: "TRACING_ZIPKIN"
+              value: "http://opentelemetry-collector.default.svc:9411"
+            - name: "READY_CHECK_RESPONSE_DELAY"
+              value: "10s"
+            - name: "PORT"
+              value: "9090"
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 9090
+            periodSeconds: 5
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 9090
+            periodSeconds: 5
+            initialDelaySeconds: 5
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceDefaults
+metadata:
+  name: cache
+spec:
+  protocol: http
+
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: cache
+spec:
+  destination:
+    name: cache
+  sources:
+    - name: api
+      action: allow

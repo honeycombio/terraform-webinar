@@ -1,0 +1,102 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: currency
+  namespace: default
+  labels:
+    app: currency
+spec:
+  selector:
+    app: currency
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: currency
+  namespace: default
+automountServiceAccountToken: false
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: currency-deployment
+  namespace: default
+  labels:
+    app: currency_v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: currency
+  template:
+    metadata:
+      labels:
+        app: currency
+        metrics: enabled
+      annotations:
+        honeycomb.io/metrics: 'true'
+        honeycomb.io/scrape_port: '9102'
+        honeycomb.io/metrics_path: '/stats/prometheus'
+        consul.hashicorp.com/transparent-proxy-exclude-inbound-ports: '9102'
+        consul.hashicorp.com/transparent-proxy-exclude-outbound-ports: '9411'
+    spec:  
+      serviceAccountName: currency
+      automountServiceAccountToken: true
+      containers:
+        - name: currency
+          image: nicholasjackson/fake-service:v0.23.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9090
+          env:
+            - name: "NAME"
+              value: "currency"
+            - name: "LISTEN_ADDR"
+              value: "0.0.0.0:9090"
+            - name: "TIMING_50_PERCENTILE"
+              value: "5ms"
+            - name: "TIMING_90_PERCENTILE"
+              value: "8ms"
+            - name: "TIMING_99_PERCENTILE"
+              value: "12ms"
+            - name: "TIMING_VARIANCE"
+              value: "10"
+            - name: "TRACING_ZIPKIN"
+              value: "http://opentelemetry-collector.default.svc:9411"
+            - name: "PORT"
+              value: "9090"
+            - name: "SERVER_TYPE"
+              value: "grpc"
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceDefaults
+metadata:
+  name: currency
+spec:
+  protocol: grpc
+
+---
+apiVersion: consul.hashicorp.com/v1alpha1
+kind: ServiceIntentions
+metadata:
+  name: currency
+spec:
+  destination:
+    name: currency
+  sources:
+    - name: api
+      action: allow
+    - name: payments
+      action: allow

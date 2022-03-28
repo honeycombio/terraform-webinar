@@ -1,37 +1,14 @@
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: web
-  namespace: default
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-spec:
-  ingressClassName: alb
-  rules:
-    - http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: web
-                port:
-                  number: 9090
-
----
 apiVersion: v1
 kind: Service
 metadata:
-  name: web
+  name: api
   namespace: default
   labels:
-    app: web
+    app: api
 spec:
-  type: NodePort
   selector:
-    app: web
+    app: api
   ports:
     - name: http
       protocol: TCP
@@ -42,7 +19,7 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: web
+  name: api
   namespace: default
 automountServiceAccountToken: false
 
@@ -50,42 +27,46 @@ automountServiceAccountToken: false
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-deployment
+  name: api-deployment
   namespace: default
   labels:
-    app: web_v1
+    app: api_v1
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
-      app: web
+      app: api
   template:
     metadata:
       labels:
-        app: web
+        app: api
         metrics: enabled
       annotations:
         honeycomb.io/metrics: 'true'
         honeycomb.io/scrape_port: '9102'
         honeycomb.io/metrics_path: '/stats/prometheus'
-        consul.hashicorp.com/transparent-proxy-exclude-inbound-ports: '9101,9090'
+        consul.hashicorp.com/transparent-proxy-exclude-inbound-ports: '9102'
         consul.hashicorp.com/transparent-proxy-exclude-outbound-ports: '9411'
     spec:  
-      serviceAccountName: web
+      serviceAccountName: api
       automountServiceAccountToken: true
       containers:
-        - name: web
+        - name: api
           image: nicholasjackson/fake-service:v0.23.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9090
           env:
             - name: "NAME"
-              value: "WEB V1"
+              value: "api"
             - name: "LISTEN_ADDR"
               value: "0.0.0.0:9090"
             - name: "TIMING_50_PERCENTILE"
-              value: "50ms"
+              value: "20ms"
+            - name: "TIMING_90_PERCENTILE"
+              value: "20ms"
+            - name: "TIMING_99_PERCENTILE"
+              value: "40ms"
             - name: "TRACING_ZIPKIN"
               value: "http://opentelemetry-collector.default.svc:9411"
             - name: "READY_CHECK_RESPONSE_DELAY"
@@ -93,7 +74,9 @@ spec:
             - name: "PORT"
               value: "9090"
             - name: "UPSTREAM_URIS"
-              value: "http://api.default.svc:9090"
+              value: "grpc://currency.default.svc:9090,http://cache.default.svc:9090,http://payments.default.svc:9090"
+            - name: "UPSTREAM_WORKERS"
+              value: "2"
           readinessProbe:
             httpGet:
               path: /ready
@@ -106,12 +89,15 @@ spec:
               port: 9090
             periodSeconds: 5
             initialDelaySeconds: 5
-
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
 ---
 apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceDefaults
 metadata:
-  name: web
+  name: api
 spec:
   protocol: http
 
@@ -119,10 +105,10 @@ spec:
 apiVersion: consul.hashicorp.com/v1alpha1
 kind: ServiceIntentions
 metadata:
-  name: web
+  name: api
 spec:
   destination:
-    name: web
+    name: api
   sources:
-    - name: ingress-gateway
+    - name: web
       action: allow
