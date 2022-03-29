@@ -83,7 +83,7 @@ module "cloudwatch-otlp" {
   # TODO: update to version in module registry once v4 compat PR is approved and tagged
   source = "git@github.com:honeycombio/terraform-aws-honeycomb-cloudwatch-metric-stream.git?ref=36c6d52e598168b3bbc849ca5e816710bbd48a21"
 
-  name                   = "honeycomb-otlp"
+  name                   = local.metric_stream_name
   honeycomb_dataset_name = "aws-metrics"
   honeycomb_api_key      = var.honeycomb_api_key
 

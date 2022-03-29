@@ -106,6 +106,7 @@ locals {
   consul_cluster_id   = "consul-${random_string.suffix.result}"
   image_repository    = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/amazon/aws-load-balancer-controller"
   alb_service_account = "aws-alb-ingress-controller"
+  metric_stream_name  = "honeycomb-otlp-${random_string.suffix.result}"
 }
 
 resource "random_string" "suffix" {
